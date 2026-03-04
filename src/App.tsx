@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeftIcon, SunIcon, MoonIcon } from '@heroicons/react/24/solid'
+import { SunIcon, MoonIcon } from '@heroicons/react/24/solid'
 import { useTheme } from './hooks/useTheme'
 import Home from './pages/Home'
 import Budget from './pages/Budget'
