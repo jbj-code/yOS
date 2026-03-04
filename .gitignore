@@ -1,8 +1,8 @@
 node_modules
 dist
+
+# Keep main env file out of git, but allow .env.local for Supabase config
 .env
-.env.*
-.DS_Store
 
 # Logs
 logs
@@ -13,10 +13,7 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
 dist-ssr
-*.local
 
 # Editor directories and files
 .vscode/*
