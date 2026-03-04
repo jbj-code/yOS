@@ -57,7 +57,7 @@ export default function App() {
         {view === 'home' ? (
           <Home onOpenBudget={() => setView('budget')} />
         ) : (
-          <Budget onBack={() => setView('home')} />
+          <Budget />
         )}
       </div>
     </div>

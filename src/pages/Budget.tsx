@@ -1,10 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import {
-  MinusIcon,
-  PencilSquareIcon,
-  PlusIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/solid'
+import { MinusIcon, PlusIcon } from '@heroicons/react/24/solid'
 import {
   loadExpenses,
   computeBudgetTotals,
@@ -17,11 +12,7 @@ import {
   formatBudgetDate,
 } from '../lib/budget'
 
-type Props = {
-  onBack: () => void
-}
-
-export default function Budget({ onBack }: Props) {
+export default function Budget() {
   const [label, setLabel] = useState('')
   const [category, setCategory] = useState('')
   const [amount, setAmount] = useState('')
@@ -32,7 +23,6 @@ export default function Budget({ onBack }: Props) {
   const [categoryMode, setCategoryMode] = useState<'select' | 'custom'>(
     'select',
   )
-  const [isEditing, setIsEditing] = useState(false)
   const [listKind, setListKind] = useState<'all' | 'expense' | 'income'>('all')
   const [isLoading, setIsLoading] = useState(true)
 
@@ -226,9 +216,7 @@ export default function Budget({ onBack }: Props) {
                         </p>
                       </div>
                       <div
-                        className={`ml-3 flex items-center gap-2 ${
-                          isEditing ? 'pr-1' : ''
-                        }`}
+                        className="ml-3 flex items-center gap-2"
                       >
                         <span
                           className={`font-semibold ${
@@ -240,16 +228,14 @@ export default function Budget({ onBack }: Props) {
                           {entry.kind === 'income' ? '+' : '-'}$
                           {entry.amount.toFixed(2)}
                         </span>
-                        {isEditing && (
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(entry.id)}
-                            className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--orb-danger)] text-white shadow-sm hover:bg-[var(--orb-danger-hover)]"
-                            aria-label="Delete entry"
-                          >
-                            <MinusIcon className="h-4 w-4" />
-                          </button>
-                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(entry.id)}
+                          className="flex h-7 w-7 items-center justify-center rounded-full bg-[var(--orb-danger)] text-white shadow-sm hover:bg-[var(--orb-danger-hover)]"
+                          aria-label="Delete entry"
+                        >
+                          <MinusIcon className="h-4 w-4" />
+                        </button>
                       </div>
                     </li>
                   ))}
