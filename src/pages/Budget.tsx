@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { MinusIcon, PlusIcon } from '@heroicons/react/24/solid'
+import { MinusIcon } from '@heroicons/react/24/solid'
 import {
   loadExpenses,
   computeBudgetTotals,
@@ -12,14 +12,20 @@ import {
   formatBudgetDate,
 } from '../lib/budget'
 
-export default function Budget() {
+type Props = {
+  isAddOpen: boolean
+  onCloseAdd: () => void
+}
+
+export default function Budget({ isAddOpen, onCloseAdd }: Props) {
   const [label, setLabel] = useState('')
-  const [category, setCategory] = useState('')
+  const [category, setCategory] = useState(
+    () => DEFAULT_BUDGET_CATEGORIES[0] ?? '',
+  )
   const [amount, setAmount] = useState('')
   const [date, setDate] = useState(() => getTodayLocalISO())
   const [entryKind, setEntryKind] = useState<'expense' | 'income'>('expense')
   const [expenses, setExpenses] = useState<Expense[]>([])
-  const [isAdding, setIsAdding] = useState(false)
   const [categoryMode, setCategoryMode] = useState<'select' | 'custom'>(
     'select',
   )
@@ -41,6 +47,12 @@ export default function Budget() {
       ignore = true
     }
   }, [])
+
+  useEffect(() => {
+    if (isAddOpen) {
+      setDate(getTodayLocalISO())
+    }
+  }, [isAddOpen])
 
   const totals = useMemo(() => computeBudgetTotals(expenses), [expenses])
   const incomeTotals = useMemo(
@@ -91,7 +103,10 @@ export default function Budget() {
 
     const base: Omit<Expense, 'id'> = {
       label: label.trim(),
-      category: category.trim() || 'Uncategorized',
+      category:
+        entryKind === 'expense'
+          ? category.trim() || (DEFAULT_BUDGET_CATEGORIES[0] ?? 'Uncategorized')
+          : category.trim(),
       amount: amt,
       date,
       kind: entryKind,
@@ -104,7 +119,7 @@ export default function Budget() {
     setLabel('')
     setCategory('')
     setAmount('')
-    setIsAdding(false)
+    onCloseAdd()
   }
 
   async function handleDelete(id: string) {
@@ -183,7 +198,7 @@ export default function Budget() {
         </button>
       </section>
 
-      <section className="space-y-2 pb-16">
+      <section className="space-y-2 pb-20">
         {isLoading ? (
           <p className="text-sm text-[var(--orb-text-muted)]">Loading...</p>
         ) : expenses.length === 0 ? (
@@ -212,7 +227,9 @@ export default function Budget() {
                           {entry.label}
                         </p>
                         <p className="text-xs text-[var(--orb-text-muted)]">
-                          {entry.kind === 'income' ? 'Income' : entry.category}
+                          {entry.kind === 'income'
+                            ? entry.category || 'Income'
+                            : entry.category}
                         </p>
                       </div>
                       <div
@@ -246,18 +263,7 @@ export default function Budget() {
         )}
       </section>
 
-      <button
-        type="button"
-        onClick={() => {
-          setDate(getTodayLocalISO())
-          setIsAdding(true)
-        }}
-        className="fixed bottom-6 right-6 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[var(--orb-accent)] text-[var(--orb-accent-contrast)] shadow-lg transition hover:opacity-90 active:opacity-95 sm:bottom-8 sm:right-[calc(50%-11rem)]"
-      >
-        <PlusIcon className="h-6 w-6" />
-      </button>
-
-      {isAdding && (
+      {isAddOpen && (
         <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/50 px-4 pb-6 pt-16 sm:items-center sm:pb-0">
           <div className="w-full max-w-md rounded-3xl border border-[var(--orb-border)] bg-[var(--orb-bg-elevated)] p-4 shadow-[var(--orb-shadow-lg)]">
             <div className="mb-3 flex items-center justify-between">
@@ -267,7 +273,13 @@ export default function Budget() {
               <div className="inline-flex rounded-full bg-[var(--orb-bg-muted)] p-0.5 text-[11px]">
                 <button
                   type="button"
-                  onClick={() => setEntryKind('expense')}
+                  onClick={() => {
+                    setEntryKind('expense')
+                    if (!category.trim()) {
+                      setCategory(DEFAULT_BUDGET_CATEGORIES[0] ?? '')
+                    }
+                    setCategoryMode('select')
+                  }}
                   className={`px-3 py-1 rounded-full font-medium transition ${
                     entryKind === 'expense'
                       ? 'bg-red-500 text-white'
@@ -278,7 +290,11 @@ export default function Budget() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setEntryKind('income')}
+                  onClick={() => {
+                    setEntryKind('income')
+                    setCategory('')
+                    setCategoryMode('select')
+                  }}
                   className={`px-3 py-1 rounded-full font-medium transition ${
                     entryKind === 'income'
                       ? 'bg-emerald-500 text-white'
@@ -393,10 +409,10 @@ export default function Budget() {
                 <button
                   type="button"
                   onClick={() => {
-                    setIsAdding(false)
+                    onCloseAdd()
                     setEntryKind('expense')
                     setLabel('')
-                    setCategory('')
+                    setCategory(DEFAULT_BUDGET_CATEGORIES[0] ?? '')
                     setAmount('')
                     setDate(getTodayLocalISO())
                     setCategoryMode('select')
