@@ -11,6 +11,30 @@ export type Expense = {
   kind: ExpenseKind
 }
 
+/** Raw row from Supabase entries table. Single place to map row → Expense (DRY). */
+type EntryRow = {
+  id: string
+  label: string | null
+  category: string | null
+  amount: number
+  date: string | null
+  kind: string
+}
+
+function mapRowToExpense(row: EntryRow): Expense {
+  return {
+    id: row.id,
+    label: row.label ?? '',
+    category: row.category ?? '',
+    amount: Number(row.amount) || 0,
+    date: row.date ?? getTodayLocalISO(),
+    kind: row.kind === 'income' ? 'income' : 'expense',
+  }
+}
+
+/** In-memory cache to avoid repeated Supabase reads (rate limits). Invalidated on write/delete. */
+let entriesCache: Expense[] | null = null
+
 export const DEFAULT_BUDGET_CATEGORIES: string[] = [
   'Groceries',
   'Transport',
@@ -41,6 +65,8 @@ export function formatBudgetDate(date: string): string {
 }
 
 export async function loadExpenses(): Promise<Expense[]> {
+  if (entriesCache !== null) return entriesCache
+
   const { data, error } = await supabase
     .from('entries')
     .select('id, label, category, amount, date, kind')
@@ -53,14 +79,14 @@ export async function loadExpenses(): Promise<Expense[]> {
     return []
   }
 
-  return (data ?? []).map((row: any) => ({
-    id: row.id,
-    label: row.label ?? '',
-    category: row.category ?? '',
-    amount: Number(row.amount) || 0,
-    date: row.date ?? getTodayLocalISO(),
-    kind: row.kind === 'income' ? 'income' : 'expense',
-  }))
+  const entries = (data ?? []).map((row: EntryRow) => mapRowToExpense(row))
+  entriesCache = entries
+  return entries
+}
+
+/** Clear cached entries so next loadExpenses() refetches. Call after external changes if needed. */
+export function invalidateEntriesCache(): void {
+  entriesCache = null
 }
 
 export async function createEntry(
@@ -84,14 +110,9 @@ export async function createEntry(
     return null
   }
 
-  return {
-    id: data.id,
-    label: data.label ?? '',
-    category: data.category ?? '',
-    amount: Number(data.amount) || 0,
-    date: data.date ?? getTodayLocalISO(),
-    kind: data.kind === 'income' ? 'income' : 'expense',
-  }
+  const entry = mapRowToExpense(data as EntryRow)
+  if (entriesCache !== null) entriesCache = [entry, ...entriesCache]
+  return entry
 }
 
 export async function deleteEntry(id: string): Promise<boolean> {
@@ -101,6 +122,7 @@ export async function deleteEntry(id: string): Promise<boolean> {
     console.error('Failed to delete entry', error)
     return false
   }
+  if (entriesCache !== null) entriesCache = entriesCache.filter((e) => e.id !== id)
   return true
 }
 

@@ -15,3 +15,82 @@
       ui-sans-serif, sans-serif;
   }
 }
+
+/* Mobile: nav bar sits above safe area (notched devices) */
+.orb-nav-safe {
+  bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+}
+
+/* Reusable page header: title + optional subtitle left, optional action right.
+   Same positioning on every page: title and action align to top. */
+.orb-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.orb-page-header-inner {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.orb-page-header-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.5;
+  color: var(--orb-text);
+}
+.orb-page-header-subtitle {
+  font-size: 0.75rem;
+  color: var(--orb-text-muted);
+  margin-top: 0.125rem;
+}
+.orb-page-header-right {
+  flex-shrink: 0;
+  padding-top: 0.125rem; /* align icon with title cap height */
+}
+.orb-page-header-action {
+  border-radius: 9999px;
+  padding: 0.5rem;
+  color: var(--orb-text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.orb-page-header-action:hover {
+  background: var(--orb-bg-muted);
+  color: var(--orb-text);
+}
+/* Header action icons: same size everywhere (theme toggle, add, etc.) */
+.orb-page-header-action .orb-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+}
+
+/* Modal panel: mobile bottom-sheet style, scrollable, not too tall */
+.orb-modal-panel {
+  max-height: 88dvh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 640px) {
+  .orb-modal-panel {
+    padding-bottom: 1rem;
+  }
+}
+
+/* Inputs: 16px font on mobile to prevent iOS zoom on focus */
+.orb-input {
+  font-size: 16px;
+}
+@media (min-width: 640px) {
+  .orb-input {
+    font-size: 0.875rem;
+  }
+}

@@ -1,2 +1,2 @@
-export type View = 'home' | 'budget' | 'meal' | 'journal'
+export type View = 'home' | 'budget' | 'meal' | 'supplements'
 

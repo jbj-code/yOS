@@ -1,16 +1,78 @@
 import { useState } from 'react'
-import { SunIcon, MoonIcon } from '@heroicons/react/24/solid'
+import { SunIcon, MoonIcon, PlusCircleIcon } from '@heroicons/react/24/solid'
 import { useTheme } from './hooks/useTheme'
 import Home from './pages/Home'
 import Budget from './pages/Budget'
+import Supplements from './pages/Supplements'
 import './style.css'
 import type { View } from './nav'
 import { NavBar } from './components/NavBar'
+
+const PAGE_CONFIG: Record<View, { title: string; subtitle: string }> = {
+  home: {
+    title: 'yOS',
+    subtitle: 'Your personal hub',
+  },
+  budget: {
+    title: 'Budget',
+    subtitle: '',
+  },
+  meal: {
+    title: 'Meal plan',
+    subtitle: 'Plan meals and track cost (coming soon)',
+  },
+  supplements: {
+    title: 'Supplements',
+    subtitle: 'Spend per month',
+  },
+}
 
 export default function App() {
   const { theme, setTheme } = useTheme()
   const [view, setView] = useState<View>('home')
   const [budgetAddOpen, setBudgetAddOpen] = useState(false)
+  const [supplementAddOpen, setSupplementAddOpen] = useState(false)
+
+  const config = PAGE_CONFIG[view]
+  const right =
+    view === 'home'
+      ? (
+          <button
+            type="button"
+            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+            className="orb-page-header-action"
+            aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+          >
+            {theme === 'light' ? (
+              <MoonIcon className="orb-icon" />
+            ) : (
+              <SunIcon className="orb-icon" />
+            )}
+          </button>
+        )
+      : view === 'budget'
+        ? (
+            <button
+              type="button"
+              onClick={() => setBudgetAddOpen(true)}
+              className="orb-page-header-action"
+              aria-label="Add entry"
+            >
+              <PlusCircleIcon className="orb-icon" />
+            </button>
+          )
+        : view === 'supplements'
+          ? (
+              <button
+                type="button"
+                onClick={() => setSupplementAddOpen(true)}
+                className="orb-page-header-action"
+                aria-label="Add supplement"
+              >
+                <PlusCircleIcon className="orb-icon" />
+              </button>
+            )
+          : undefined
 
   return (
     <div
@@ -18,41 +80,14 @@ export default function App() {
       style={{ background: 'var(--orb-bg)' }}
     >
       <div className="w-full max-w-xl pb-20">
-        <header className="mb-6 flex items-center justify-between gap-3">
-          <div className="flex min-w-0 items-center gap-2">
-            <div className="min-w-0">
-              <h1 className="truncate text-xl font-semibold tracking-tight text-[var(--orb-text)]">
-                {view === 'home'
-                  ? 'yOS'
-                  : view === 'budget'
-                    ? 'Budget'
-                    : view === 'meal'
-                      ? 'Meal plan'
-                      : 'Dream journal'}
-              </h1>
-              <p className="text-xs text-[var(--orb-text-muted)]">
-                {view === 'home'
-                  ? 'Your personal hub'
-                  : view === 'meal'
-                    ? 'Plan meals and track cost (coming soon)'
-                    : view === 'journal'
-                      ? 'Log dreams and reflections (coming soon)'
-                      : ''}
-              </p>
-            </div>
+        <header className="orb-page-header">
+          <div className="orb-page-header-inner">
+            <h1 className="orb-page-header-title">{config.title}</h1>
+            {config.subtitle ? (
+              <p className="orb-page-header-subtitle">{config.subtitle}</p>
+            ) : null}
           </div>
-          <button
-            type="button"
-            onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-            className="shrink-0 rounded-full p-2 text-[var(--orb-text-muted)] hover:bg-[var(--orb-bg-muted)] hover:text-[var(--orb-text)]"
-            aria-label={theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
-          >
-            {theme === 'light' ? (
-              <MoonIcon className="h-5 w-5" />
-            ) : (
-              <SunIcon className="h-5 w-5" />
-            )}
-          </button>
+          {right != null && <div className="orb-page-header-right">{right}</div>}
         </header>
 
         {view === 'home' && <Home onOpenBudget={() => setView('budget')} />}
@@ -67,10 +102,11 @@ export default function App() {
             Meal planning is coming soon.
           </div>
         )}
-        {view === 'journal' && (
-          <div className="rounded-2xl border border-[var(--orb-border)] bg-[var(--orb-bg-elevated)] p-4 text-sm text-[var(--orb-text-muted)]">
-            Dream journaling is coming soon.
-          </div>
+        {view === 'supplements' && (
+          <Supplements
+            isAddOpen={supplementAddOpen}
+            onCloseAdd={() => setSupplementAddOpen(false)}
+          />
         )}
       </div>
 
@@ -78,13 +114,8 @@ export default function App() {
         view={view}
         onChangeView={(next) => {
           setView(next)
-          if (next !== 'budget') {
-            setBudgetAddOpen(false)
-          }
-        }}
-        onAdd={() => {
-          setView('budget')
-          setBudgetAddOpen(true)
+          if (next !== 'budget') setBudgetAddOpen(false)
+          if (next !== 'supplements') setSupplementAddOpen(false)
         }}
       />
     </div>

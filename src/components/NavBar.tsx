@@ -1,26 +1,24 @@
 import {
   HomeIcon,
   BanknotesIcon,
-  PlusCircleIcon,
   CalendarDaysIcon,
-  BookOpenIcon,
+  BeakerIcon,
 } from '@heroicons/react/24/solid'
 import type { View } from '../nav'
 
 type Props = {
   view: View
   onChangeView: (view: View) => void
-  onAdd: () => void
 }
 
-export function NavBar({ view, onChangeView, onAdd }: Props) {
+export function NavBar({ view, onChangeView }: Props) {
   return (
-    <nav className="pointer-events-none fixed inset-x-0 bottom-4 flex justify-center">
+    <nav className="pointer-events-none fixed inset-x-0 orb-nav-safe flex justify-center">
       <div className="pointer-events-auto mx-auto flex w-full max-w-xl items-center justify-between rounded-3xl border border-[var(--orb-border)] bg-[var(--orb-bg-elevated)]/95 px-4 py-2 text-xs shadow-[var(--orb-shadow-lg)] backdrop-blur">
         <button
           type="button"
           onClick={() => onChangeView('home')}
-          className="flex flex-1 flex-col items-center gap-0.5"
+          className="flex flex-1 flex-col items-center gap-0.5 min-h-[44px] min-w-[44px] justify-center py-2"
         >
           <HomeIcon
             className={`h-5 w-5 ${
@@ -43,7 +41,7 @@ export function NavBar({ view, onChangeView, onAdd }: Props) {
         <button
           type="button"
           onClick={() => onChangeView('budget')}
-          className="flex flex-1 flex-col items-center gap-0.5"
+          className="flex flex-1 flex-col items-center gap-0.5 min-h-[44px] min-w-[44px] justify-center py-2"
         >
           <BanknotesIcon
             className={`h-5 w-5 ${
@@ -65,18 +63,8 @@ export function NavBar({ view, onChangeView, onAdd }: Props) {
 
         <button
           type="button"
-          onClick={onAdd}
-          className="flex flex-1 flex-col items-center gap-0.5"
-        >
-          <div className="flex h-12 w-12 -translate-y-3 items-center justify-center rounded-full bg-[var(--orb-accent)] text-[var(--orb-accent-contrast)] shadow-lg">
-            <PlusCircleIcon className="h-6 w-6" />
-          </div>
-        </button>
-
-        <button
-          type="button"
           onClick={() => onChangeView('meal')}
-          className="flex flex-1 flex-col items-center gap-0.5"
+          className="flex flex-1 flex-col items-center gap-0.5 min-h-[44px] min-w-[44px] justify-center py-2"
         >
           <CalendarDaysIcon
             className={`h-5 w-5 ${
@@ -98,24 +86,24 @@ export function NavBar({ view, onChangeView, onAdd }: Props) {
 
         <button
           type="button"
-          onClick={() => onChangeView('journal')}
-          className="flex flex-1 flex-col items-center gap-0.5"
+          onClick={() => onChangeView('supplements')}
+          className="flex flex-1 flex-col items-center gap-0.5 min-h-[44px] min-w-[44px] justify-center py-2"
         >
-          <BookOpenIcon
+          <BeakerIcon
             className={`h-5 w-5 ${
-              view === 'journal'
+              view === 'supplements'
                 ? 'text-[var(--orb-accent)]'
                 : 'text-[var(--orb-text-muted)]'
             }`}
           />
           <span
             className={
-              view === 'journal'
+              view === 'supplements'
                 ? 'text-[var(--orb-accent)]'
                 : 'text-[var(--orb-text-muted)]'
             }
           >
-            Dreams
+            Stack
           </span>
         </button>
       </div>

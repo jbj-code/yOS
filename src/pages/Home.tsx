@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronRightIcon } from '@heroicons/react/24/solid'
-import { loadExpenses, computeBudgetTotals, type Expense } from '../lib/budget'
+import {
+  loadExpenses,
+  computeBudgetTotals,
+  computeIncomeTotals,
+  type Expense,
+} from '../lib/budget'
 
 type Props = {
   onOpenBudget: () => void
@@ -22,6 +27,11 @@ export default function Home({ onOpenBudget }: Props) {
   }, [])
 
   const totals = useMemo(() => computeBudgetTotals(expenses), [expenses])
+  const incomeTotals = useMemo(
+    () => computeIncomeTotals(expenses),
+    [expenses],
+  )
+  const net = incomeTotals.total - totals.total
 
   return (
     <div className="space-y-5">
@@ -40,18 +50,24 @@ export default function Home({ onOpenBudget }: Props) {
             <p className="mt-1 text-xs text-[var(--orb-text-muted)]">
               Track spending and expenses
             </p>
-            <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-              <span className="font-medium text-[var(--orb-accent)]">
-                ${totals.total.toFixed(2)} total
+            <div className="mt-3 flex flex-wrap items-baseline gap-x-4 gap-y-1 text-sm">
+              <span
+                className={`font-semibold tabular-nums ${
+                  net > 0
+                    ? 'text-emerald-500'
+                    : net < 0
+                      ? 'text-red-500'
+                      : 'text-[var(--orb-text)]'
+                }`}
+              >
+                {net > 0 ? '+$' : net < 0 ? '-$' : '$'}
+                {Math.abs(net).toFixed(2)}
               </span>
               <span className="text-[var(--orb-text-muted)]">
                 {totals.count} expense{totals.count !== 1 ? 's' : ''}
+                {incomeTotals.count > 0 &&
+                  ` · ${incomeTotals.count} income`}
               </span>
-              {totals.topCategoryName && (
-                <span className="text-[var(--orb-text-muted)]">
-                  Top: {totals.topCategoryName}
-                </span>
-              )}
             </div>
           </div>
           <ChevronRightIcon className="h-5 w-5 shrink-0 text-[var(--orb-text-muted)]" />
@@ -67,9 +83,9 @@ export default function Home({ onOpenBudget }: Props) {
       </div>
 
       <div className="rounded-2xl border border-[var(--orb-border)] border-dashed bg-[var(--orb-bg-muted)]/50 p-4 opacity-80">
-        <h2 className="font-semibold text-[var(--orb-text)]">Dream journal</h2>
+        <h2 className="font-semibold text-[var(--orb-text)]">Supplements</h2>
         <p className="mt-1 text-xs text-[var(--orb-text-muted)]">
-          Lucid dreams and notes
+          Track your supplement stack
         </p>
         <p className="mt-2 text-xs text-[var(--orb-text-muted)]">Coming soon</p>
       </div>
