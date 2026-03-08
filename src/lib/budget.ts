@@ -38,7 +38,7 @@ let entriesCache: Expense[] | null = null
 export const DEFAULT_BUDGET_CATEGORIES: string[] = [
   'Groceries',
   'Transport',
-  'Dining out',
+  'Food & Dining',
   'Housing',
   'Subscriptions',
   'Health',
@@ -64,6 +64,36 @@ export function formatBudgetDate(date: string): string {
   return `${m}/${d}/${year}`
 }
 
+export function getCurrentMonthKey(): string {
+  const now = new Date()
+  const y = now.getFullYear()
+  const m = String(now.getMonth() + 1).padStart(2, '0')
+  return `${y}-${m}`
+}
+
+export function formatMonthLabel(key: string): string {
+  const [y, m] = key.split('-')
+  const monthNum = parseInt(m, 10) || 1
+  const date = new Date(Number(y), monthNum - 1, 1)
+  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+}
+
+export function getPrevMonth(key: string): string {
+  const [y, m] = key.split('-').map(Number)
+  const d = new Date(y, m - 1, 0)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+export function getNextMonth(key: string): string {
+  const [y, m] = key.split('-').map(Number)
+  const d = new Date(y, m, 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+export function filterByMonth(expenses: Expense[], monthKey: string): Expense[] {
+  return expenses.filter((e) => e.date.startsWith(monthKey))
+}
+
 export async function loadExpenses(): Promise<Expense[]> {
   if (entriesCache !== null) return entriesCache
 
@@ -82,11 +112,6 @@ export async function loadExpenses(): Promise<Expense[]> {
   const entries = (data ?? []).map((row: EntryRow) => mapRowToExpense(row))
   entriesCache = entries
   return entries
-}
-
-/** Clear cached entries so next loadExpenses() refetches. Call after external changes if needed. */
-export function invalidateEntriesCache(): void {
-  entriesCache = null
 }
 
 export async function createEntry(

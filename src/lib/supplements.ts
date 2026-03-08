@@ -56,11 +56,13 @@ export async function loadSupplements(): Promise<Supplement[]> {
   return list
 }
 
-export function invalidateSupplementsCache(): void {
-  supplementsCache = null
-}
+export type CreateSupplementResult =
+  | { data: Supplement; error: null }
+  | { data: null; error: string }
 
-export async function createSupplement(input: Omit<Supplement, 'id'>): Promise<Supplement | null> {
+export async function createSupplement(
+  input: Omit<Supplement, 'id'>,
+): Promise<CreateSupplementResult> {
   const { data, error } = await supabase
     .from('supplements')
     .insert({
@@ -75,7 +77,10 @@ export async function createSupplement(input: Omit<Supplement, 'id'>): Promise<S
   if (error) {
     // eslint-disable-next-line no-console
     console.error('Failed to create supplement', error)
-    return null
+    return {
+      data: null,
+      error: error.message || 'Could not save supplement',
+    }
   }
 
   const supplement = mapRowToSupplement(data as SupplementRow)
@@ -84,7 +89,7 @@ export async function createSupplement(input: Omit<Supplement, 'id'>): Promise<S
       a.name.localeCompare(b.name),
     )
   }
-  return supplement
+  return { data: supplement, error: null }
 }
 
 export async function deleteSupplement(id: string): Promise<boolean> {

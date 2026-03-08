@@ -1,8 +1,10 @@
 node_modules
 dist
 
-# Keep main env file out of git, but allow .env.local for Supabase config
+# Env files with secrets (Supabase URL/keys) – never commit
 .env
+.env.local
+.env.*.local
 
 # Logs
 logs

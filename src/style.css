@@ -9,16 +9,80 @@
     color-scheme: dark;
   }
 
+  html {
+    scrollbar-gutter: stable;
+  }
+
   body {
     margin: 0;
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'SF Pro Text',
       ui-sans-serif, sans-serif;
+    overflow-x: hidden;
+    background: var(--orb-bg, #f1f5f9);
   }
 }
 
-/* Mobile: nav bar sits above safe area (notched devices) */
-.orb-nav-safe {
-  bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+/* Pointer cursor for interactive elements (desktop) */
+button,
+[role='button'],
+a,
+.orb-clickable {
+  cursor: pointer;
+}
+
+/* Hoverable card: outline in primary color, shadow, slight scale (desktop only) */
+@media (hover: hover) {
+  .orb-clickable-card {
+    cursor: pointer;
+    transition:
+      transform 0.2s ease-out,
+      box-shadow 0.2s ease-out,
+      border-color 0.2s ease-out;
+  }
+  .orb-clickable-card:hover {
+    transform: scale(1.02);
+    border-color: var(--orb-accent);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1), 0 0 0 2px var(--orb-accent);
+  }
+  [data-theme='dark'] .orb-clickable-card:hover {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3), 0 0 0 2px var(--orb-accent);
+  }
+}
+
+/* Responsive standard: mobile-first, sm (640px) = desktop. Touch targets ≥ 44px. */
+.orb-touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Nav bar: fixed to bottom, same width as body so it doesn't shift when scrollbar appears. */
+.orb-nav-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  max-width: 100%;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 50;
+}
+.orb-nav-bar-inner {
+  border-radius: 1.5rem 1.5rem 0 0;
+  border-bottom: none;
+}
+
+/* Desktop sidebar */
+.orb-sidebar {
+  width: 12rem;
+  flex-shrink: 0;
+  border-right: 1px solid var(--orb-border);
+  background: var(--orb-bg-elevated);
+}
+.orb-sidebar-nav {
+  padding-top: 0.5rem;
+}
+.orb-sidebar-item:hover {
+  background: var(--orb-bg-muted);
 }
 
 /* Reusable page header: title + optional subtitle left, optional action right.
@@ -28,7 +92,12 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+}
+@media (min-width: 640px) {
+  .orb-page-header {
+    margin-bottom: 1.5rem;
+  }
 }
 .orb-page-header-inner {
   flex: 1 1 auto;
@@ -38,11 +107,34 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 1.25rem;
+  font-size: 1.125rem;
   font-weight: 600;
   letter-spacing: -0.025em;
   line-height: 1.5;
   color: var(--orb-text);
+}
+.orb-page-header-title--bold {
+  font-weight: 700;
+}
+@media (min-width: 640px) {
+  .orb-page-header-title {
+    font-size: 1.25rem;
+  }
+}
+/* Home: larger yOS title and less space above date */
+.orb-page-header--home .orb-page-header-title {
+  font-size: 1.5rem;
+}
+.orb-page-header--home {
+  margin-bottom: 0.5rem;
+}
+@media (min-width: 640px) {
+  .orb-page-header--home .orb-page-header-title {
+    font-size: 1.75rem;
+  }
+  .orb-page-header--home {
+    margin-bottom: 0.75rem;
+  }
 }
 .orb-page-header-subtitle {
   font-size: 0.75rem;
@@ -71,6 +163,15 @@
   height: 1.5rem;
   flex-shrink: 0;
 }
+/* Home header: bell-style icons (outlined, subtle circular border) */
+.orb-page-header--home .orb-page-header-action {
+  border: 1px solid var(--orb-border);
+  background: var(--orb-bg-elevated);
+}
+.orb-page-header--home .orb-page-header-action:hover {
+  background: var(--orb-bg-muted);
+  border-color: var(--orb-border-muted);
+}
 
 /* Modal panel: mobile bottom-sheet style, scrollable, not too tall */
 .orb-modal-panel {
@@ -78,6 +179,20 @@
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.orb-modal-panel::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar but keep scrolling (other scrollable areas) */
+.orb-scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.orb-scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 @media (min-width: 640px) {
   .orb-modal-panel {
@@ -92,5 +207,15 @@
 @media (min-width: 640px) {
   .orb-input {
     font-size: 0.875rem;
+  }
+}
+
+/* Amount field in add income/expense: large, prominent (overrides .orb-input) */
+.orb-amount-input {
+  font-size: 2.5rem !important;
+}
+@media (min-width: 640px) {
+  .orb-amount-input {
+    font-size: 3.25rem !important;
   }
 }

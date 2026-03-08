@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { MdScience } from 'react-icons/md'
+import { useLongPressReveal } from '../hooks/useLongPressReveal'
 import {
   loadSupplements,
   createSupplement,
@@ -20,57 +22,14 @@ export default function Supplements({ isAddOpen, onCloseAdd }: Props) {
   const [price, setPrice] = useState('')
   const [servingsPerContainer, setServingsPerContainer] = useState('')
   const [servingsPerDay, setServingsPerDay] = useState('1')
-  const [deleteRevealId, setDeleteRevealId] = useState<string | null>(null)
-  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const ignoreNextUpRef = useRef(false)
-  const pointerStartRef = useRef({ x: 0, y: 0 })
-  const LONG_PRESS_MS = 450
-  const MOVE_THRESHOLD_PX = 10
-
-  const clearLongPressTimer = () => {
-    if (longPressTimerRef.current) {
-      clearTimeout(longPressTimerRef.current)
-      longPressTimerRef.current = null
-    }
-  }
-
-  const startLongPress = (id: string, clientX: number, clientY: number) => {
-    clearLongPressTimer()
-    setDeleteRevealId(null)
-    pointerStartRef.current = { x: clientX, y: clientY }
-    longPressTimerRef.current = setTimeout(() => {
-      longPressTimerRef.current = null
-      setDeleteRevealId(id)
-      ignoreNextUpRef.current = true
-    }, LONG_PRESS_MS)
-  }
-
-  const cancelLongPress = (clientX: number, clientY: number) => {
-    const dx = clientX - pointerStartRef.current.x
-    const dy = clientY - pointerStartRef.current.y
-    if (Math.abs(dx) > MOVE_THRESHOLD_PX || Math.abs(dy) > MOVE_THRESHOLD_PX) {
-      clearLongPressTimer()
-    }
-  }
-
-  const onPointerEnd = (id: string) => {
-    clearLongPressTimer()
-    if (ignoreNextUpRef.current) {
-      ignoreNextUpRef.current = false
-      return
-    }
-    if (deleteRevealId === id) setDeleteRevealId(null)
-  }
-
-  useEffect(() => {
-    const onGlobalEnd = () => clearLongPressTimer()
-    window.addEventListener('touchend', onGlobalEnd, { passive: true })
-    window.addEventListener('mouseup', onGlobalEnd)
-    return () => {
-      window.removeEventListener('touchend', onGlobalEnd)
-      window.removeEventListener('mouseup', onGlobalEnd)
-    }
-  }, [])
+  const [addError, setAddError] = useState<string | null>(null)
+  const {
+    revealId: deleteRevealId,
+    startLongPress,
+    cancelLongPress,
+    onPointerEnd,
+    clearLongPressTimer,
+  } = useLongPressReveal()
 
   useEffect(() => {
     let ignore = false
@@ -91,45 +50,43 @@ export default function Supplements({ isAddOpen, onCloseAdd }: Props) {
   useEffect(() => {
     if (isAddOpen) {
       setServingsPerDay('1')
+      setAddError(null)
     }
   }, [isAddOpen])
-
-  const totalPerMonth = useMemo(
-    () => supplements.reduce((sum, s) => sum + monthlyCost(s), 0),
-    [supplements],
-  )
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
     const priceNum = Number(price)
     const servingsNum = Number(servingsPerContainer)
-    const perDayNum = Number(servingsPerDay)
+    const perDayNum = Number(servingsPerDay) || 1
     if (
       !name.trim() ||
       Number.isNaN(priceNum) ||
       priceNum < 0 ||
       Number.isNaN(servingsNum) ||
-      servingsNum < 1 ||
-      Number.isNaN(perDayNum) ||
-      perDayNum < 0
+      servingsNum < 1
     )
       return
 
-    const created = await createSupplement({
+    const result = await createSupplement({
       name: name.trim(),
       price: priceNum,
       servingsPerContainer: servingsNum,
-      servingsPerDay: perDayNum,
+      servingsPerDay: perDayNum < 0 ? 1 : perDayNum,
     })
-    if (!created) return
+    if (result.error) {
+      setAddError(result.error)
+      return
+    }
 
     setSupplements((prev) =>
-      [...prev, created].sort((a, b) => a.name.localeCompare(b.name)),
+      [...prev, result.data].sort((a, b) => a.name.localeCompare(b.name)),
     )
     setName('')
     setPrice('')
     setServingsPerContainer('')
     setServingsPerDay('1')
+    setAddError(null)
     onCloseAdd()
   }
 
@@ -140,19 +97,8 @@ export default function Supplements({ isAddOpen, onCloseAdd }: Props) {
   }
 
   return (
-    <div className="relative w-full max-w-xl">
-      {supplements.length > 0 && (
-        <div className="mb-4 rounded-2xl border border-[var(--orb-border)] bg-[var(--orb-bg-elevated)] p-3 text-sm shadow-[var(--orb-shadow)]">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--orb-text-muted)]">
-            Estimated spend per month
-          </p>
-          <p className="mt-1 text-xl font-semibold text-[var(--orb-accent)]">
-            ${totalPerMonth.toFixed(2)}
-          </p>
-        </div>
-      )}
-
-      <section className="space-y-2 pb-20">
+    <div className="relative w-full max-w-xl min-w-0">
+      <section className="space-y-3 pb-20">
         {isLoading ? (
           <p className="text-sm text-[var(--orb-text-muted)]">Loading...</p>
         ) : supplements.length === 0 ? (
@@ -160,7 +106,7 @@ export default function Supplements({ isAddOpen, onCloseAdd }: Props) {
             No supplements yet. Tap + to add one.
           </p>
         ) : (
-          <ul className="space-y-2">
+          <ul className="grid grid-cols-3 gap-3">
             {supplements.map((s) => {
               const isRevealed = deleteRevealId === s.id
               const perServing = costPerServing(s)
@@ -168,15 +114,12 @@ export default function Supplements({ isAddOpen, onCloseAdd }: Props) {
               return (
                 <li
                   key={s.id}
-                  className="flex rounded-2xl border border-[var(--orb-border)] bg-[var(--orb-bg-elevated)] shadow-[var(--orb-shadow)] transition-[border-color] duration-200"
-                  style={{
-                    borderColor: isRevealed
-                      ? 'var(--orb-border-muted)'
-                      : undefined,
-                  }}
+                  className={`orb-clickable-card flex min-w-0 overflow-hidden rounded-2xl border border-[var(--orb-border)] bg-[var(--orb-bg-elevated)] shadow-[var(--orb-shadow)] transition-[border-color] duration-200 ${
+                    isRevealed ? 'border-[var(--orb-border-muted)]' : ''
+                  }`}
                 >
                   <div
-                    className="flex min-w-0 flex-1 items-center justify-between px-3 py-2 text-sm transition-[flex] duration-200"
+                    className="flex min-w-0 flex-1 flex-col items-center p-4 text-center transition-[flex] duration-200"
                     style={{ flex: isRevealed ? '1 1 0%' : undefined }}
                     onTouchStart={(e) =>
                       startLongPress(
@@ -205,20 +148,19 @@ export default function Supplements({ isAddOpen, onCloseAdd }: Props) {
                       if (e.buttons === 1) clearLongPressTimer()
                     }}
                   >
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-[var(--orb-text)]">
-                        {s.name}
-                      </p>
-                      <p className="text-xs text-[var(--orb-text-muted)]">
-                        ${s.price.toFixed(2)} · {s.servingsPerContainer}{' '}
-                        servings
-                        {s.servingsPerDay !== 1
-                          ? ` · ${s.servingsPerDay}/day`
-                          : ''}{' '}
-                        → ${perServing.toFixed(2)}/serving · $
-                        {perMonth.toFixed(2)}/mo
-                      </p>
-                    </div>
+                    <p className="text-base font-semibold text-[var(--orb-text)]">
+                      {s.name}
+                    </p>
+                    <p className="mt-1 text-lg font-semibold tabular-nums text-[var(--orb-accent)]">
+                      ${perMonth.toFixed(2)}/mo
+                    </p>
+                    <p className="mt-1 text-xs text-[var(--orb-text-muted)]">
+                      ${s.price.toFixed(2)} · {s.servingsPerContainer} servings
+                      {s.servingsPerDay !== 1 && s.servingsPerDay !== 1.0
+                        ? ` · ${s.servingsPerDay}/day`
+                        : ''}{' '}
+                      → ${perServing.toFixed(2)}/serving
+                    </p>
                   </div>
                   <div
                     className="flex shrink-0 items-center overflow-hidden transition-[width,opacity] duration-200 ease-out"
@@ -249,10 +191,40 @@ export default function Supplements({ isAddOpen, onCloseAdd }: Props) {
       {isAddOpen && (
         <div className="fixed inset-0 z-20 flex items-end justify-center bg-black/50 px-3 pt-12 pb-0 sm:items-center sm:p-4 sm:pb-0">
           <div className="orb-modal-panel w-full max-w-md rounded-t-3xl border border-b-0 border-[var(--orb-border)] bg-[var(--orb-bg-elevated)] p-3 shadow-[var(--orb-shadow-lg)] sm:rounded-3xl sm:border-b sm:p-4">
-            <h2 className="mb-3 text-sm font-semibold text-[var(--orb-text)]">
-              Add supplement
-            </h2>
-            <form onSubmit={handleAdd} className="space-y-2 sm:space-y-3">
+            <div className="mb-2 flex items-center justify-between gap-2 sm:mb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--orb-bg-muted)]">
+                  <MdScience className="text-[var(--orb-text-muted)]" size={20} />
+                </div>
+                <h2 className="text-sm font-semibold text-[var(--orb-text)]">
+                  Add supplement
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  onCloseAdd()
+                  setName('')
+                  setPrice('')
+                  setServingsPerContainer('')
+                  setServingsPerDay('1')
+                  setAddError(null)
+                }}
+                className="text-[var(--orb-text-muted)] hover:text-[var(--orb-text)]"
+              >
+                Cancel
+              </button>
+            </div>
+            {addError && (
+              <p className="mb-2 rounded-xl bg-red-500/10 px-3 py-2 text-xs text-red-600 dark:text-red-400 sm:mb-3">
+                {addError}
+              </p>
+            )}
+            <form
+              id="add-supplement-form"
+              onSubmit={handleAdd}
+              className="space-y-2 sm:space-y-3"
+            >
               <div className="flex flex-col gap-1">
                 <label className="text-xs font-medium text-[var(--orb-text-muted)]">
                   Name
@@ -266,25 +238,25 @@ export default function Supplements({ isAddOpen, onCloseAdd }: Props) {
                   autoFocus
                 />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
+              <div className="flex gap-3">
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <label className="text-xs font-medium text-[var(--orb-text-muted)]">
-                    Price ($)
+                    Servings per day
                   </label>
                   <input
                     type="number"
                     inputMode="decimal"
-                    step="0.01"
+                    step="any"
                     min="0"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value)}
-                    placeholder="0.00"
+                    value={servingsPerDay}
+                    onChange={(e) => setServingsPerDay(e.target.value)}
+                    placeholder="1"
                     className="orb-input h-10 rounded-xl border border-[var(--orb-border)] bg-[var(--orb-bg)] px-3 text-[var(--orb-text)] outline-none ring-0 focus:border-[var(--orb-accent)] focus:ring-2 focus:ring-[var(--orb-accent)]/30"
                   />
                 </div>
-                <div className="flex flex-col gap-1">
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <label className="text-xs font-medium text-[var(--orb-text-muted)]">
-                    Servings in one
+                    Servings per container
                   </label>
                   <input
                     type="number"
@@ -297,35 +269,27 @@ export default function Supplements({ isAddOpen, onCloseAdd }: Props) {
                   />
                 </div>
               </div>
-              <div className="flex flex-col gap-1">
+              <div>
                 <label className="text-xs font-medium text-[var(--orb-text-muted)]">
-                  Servings per day (for monthly cost)
+                  Price
                 </label>
-                <input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.5"
-                  min="0"
-                  value={servingsPerDay}
-                  onChange={(e) => setServingsPerDay(e.target.value)}
-                  placeholder="1"
-                  className="orb-input h-10 rounded-xl border border-[var(--orb-border)] bg-[var(--orb-bg)] px-3 text-[var(--orb-text)] outline-none ring-0 focus:border-[var(--orb-accent)] focus:ring-2 focus:ring-[var(--orb-accent)]/30"
-                />
+                <div className="mt-1 flex items-baseline rounded-xl border border-[var(--orb-border)] bg-white shadow-sm dark:bg-[var(--orb-bg)]">
+                  <span className="orb-amount-input py-4 pl-4 font-semibold tabular-nums text-[var(--orb-text)]">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="0"
+                    className="orb-amount-input w-full min-w-0 border-0 bg-transparent py-4 pr-4 pl-1 font-semibold tabular-nums text-[var(--orb-text)] outline-none focus:ring-0"
+                  />
+                </div>
               </div>
               <div className="mt-2 flex justify-end gap-2 sm:mt-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onCloseAdd()
-                    setName('')
-                    setPrice('')
-                    setServingsPerContainer('')
-                    setServingsPerDay('1')
-                  }}
-                  className="h-9 rounded-xl border border-[var(--orb-border)] px-3 text-xs font-medium text-[var(--orb-text)] hover:bg-[var(--orb-bg-muted)]"
-                >
-                  Cancel
-                </button>
                 <button
                   type="submit"
                   disabled={
@@ -335,7 +299,7 @@ export default function Supplements({ isAddOpen, onCloseAdd }: Props) {
                     Number(price) < 0 ||
                     Number(servingsPerContainer) < 1
                   }
-                  className="inline-flex h-9 items-center justify-center rounded-xl bg-[var(--orb-accent)] px-4 text-xs font-semibold text-[var(--orb-accent-contrast)] shadow transition hover:opacity-90 active:opacity-95 disabled:opacity-50"
+                  className="w-full rounded-xl bg-[var(--orb-accent)] py-3 text-sm font-semibold text-[var(--orb-accent-contrast)] shadow transition hover:opacity-90 active:opacity-95 disabled:opacity-50"
                 >
                   Save
                 </button>
