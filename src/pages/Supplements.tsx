@@ -74,13 +74,14 @@ export default function Supplements({ isAddOpen, onCloseAdd }: Props) {
       servingsPerContainer: servingsNum,
       servingsPerDay: perDayNum < 0 ? 1 : perDayNum,
     })
-    if (result.error) {
-      setAddError(result.error)
+    if (result.error || !result.data) {
+      if (result.error) setAddError(result.error)
       return
     }
+    const added = result.data
 
     setSupplements((prev) =>
-      [...prev, result.data].sort((a, b) => a.name.localeCompare(b.name)),
+      [...prev, added].sort((a, b) => a.name.localeCompare(b.name)),
     )
     setName('')
     setPrice('')
