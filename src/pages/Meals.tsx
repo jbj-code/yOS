@@ -7,7 +7,6 @@ import {
   deleteMeal,
   totalMealCost,
   type Meal,
-  type MealIngredient,
 } from '../lib/meals'
 
 type Props = {

@@ -1,4 +1,5 @@
-import { useState, FormEvent } from 'react'
+import { useState } from 'react'
+import type { FormEvent } from 'react'
 
 const STORAGE_KEY = 'yOS_unlocked'
 
@@ -21,7 +22,7 @@ export function PasswordGate({ onUnlock }: Props) {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError('')
     if (!expectedPassword) {
